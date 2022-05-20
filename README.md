@@ -2,7 +2,7 @@
 
 ## Example 1
 
-For a flipping coin example, assuming the probability to get the head can be between 0 and 1,
+For a biased coin-flipping example, assuming the probability to get the head can be between 0 and 1,
 then what is its posterior given the observed data:
 
 1. Source code [BI_coin.R](BI_coin.R).
