@@ -119,8 +119,8 @@ createPlot = function(chain, chain_len, prior_shape, burnin=.1) {
     xlim(0, 1) + scale_colour_manual(values = c("red", "green")) + 
     xlab("") + ylab("") + theme_classic() + 
     # Add mean line
-    geom_vline(aes(xintercept=summ[4]), color="blue", linetype="dashed", size=.5) +
-    annotate(geom="text", x=summ[4], y=0.2, label=round(summ[4],3), 
+    geom_vline(aes(xintercept=mean(posterior)), color="blue", linetype="dashed", size=.5) +
+    annotate(geom="text", x=mean(posterior), y=0.2, label=round(mean(posterior),3), 
              color="blue", alpha=.7)
   return(p)
 }
