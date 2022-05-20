@@ -1,5 +1,3 @@
-library(coda)
-
 
 # This function calculates the probability of a 
 # sequence of coin flip data, given a value of P_heads_guess
@@ -145,6 +143,8 @@ calc_prob_coin_flip_data(P_heads_guess=0.7, coin_flips=coin_flips)
 
 
 ####### case 1 #######
+
+library(coda)
 
 startvalue = c(0.5) # P_heads_guess
 chain_len = 10000
