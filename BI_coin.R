@@ -50,17 +50,18 @@ likelihood = function(param){
   return(calc_prob_coin_flip_data(P_heads_guess=param, coin_flips=coin_flips))
 }
 
-# 1 or 5
+# prior
 prior = function(param, shape1 = 1, shape2 = 1){
   return(dbeta(param, shape1 = shape1, shape2 = shape2, log = T))
 }
 
-# window size
+# make a proposal in MCMC
 getProposal = function(current, n=1, w = .01) {
   proposal = current + runif(n, min = -(w/2), max = (w/2)) 
   return(proposal)
 }
 
+# accept or not the currect state 
 accept = function(proposal, current, prior_shape) {
   if (proposal < 0 | proposal > 1) 
     return(FALSE);
@@ -75,6 +76,7 @@ accept = function(proposal, current, prior_shape) {
   }
 }
 
+# MCMC given a start value and how many iterations
 run_metropolis_MCMC = function(startvalue, iterations, prior_shape){
   cat("Prior beta(", prior_shape, ", ", prior_shape, ")\n")
   chain = array(dim = c(iterations+1,1))
@@ -103,6 +105,7 @@ run_metropolis_MCMC = function(startvalue, iterations, prior_shape){
   return(mcmc(chain))
 }
 
+# plot prior, posterior together
 createPlot = function(chain, chain_len, prior_shape, burnin=.1) {
   # rm burnin
   posterior = chain[(chain_len*burnin):chain_len, 1]

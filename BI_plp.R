@@ -1,3 +1,5 @@
+# set working dir here
+# setwd("~/WorkSpace/BayesianInference")
 
 # This function calculates the probability of a 
 # sequence of coin flip data, given a value of P_heads_guess
@@ -50,23 +52,25 @@ likelihood = function(param){
   return(calc_prob_coin_flip_data(P_heads_guess=param, coin_flips=coin_flips))
 }
 
-prior = function(param, shape = 2){
-  return(dgamma(param, shape, log = T))
+# prior 
+prior = function(param, shape1 = 2, shape2 = 5){
+  return(dbeta(param, shape1 = shape1, shape2 = shape2, log = T))
 }
 
-# window size
+# make a proposal in MCMC
 getProposal = function(current, n=1, w = .01) {
   proposal = current + runif(n, min = -(w/2), max = (w/2)) 
   return(proposal)
 }
 
-accept = function(proposal, current, prior_shape) {
+# accept or not the currect state 
+accept = function(proposal, current) {
   if (proposal < 0 | proposal > 1) 
     return(FALSE);
   ratio = exp( likelihood(proposal) + 
-                 prior(proposal, prior_shape) - 
+                 prior(proposal) - 
                  likelihood(current) - 
-                 prior(current, prior_shape) )
+                 prior(current) )
   if (ratio > runif(1)){
     return(TRUE)
   }else{
@@ -74,8 +78,9 @@ accept = function(proposal, current, prior_shape) {
   }
 }
 
-run_metropolis_MCMC = function(startvalue, iterations, prior_shape){
-  cat("Prior gamma(", prior_shape, ")\n")
+# MCMC given a start value and how many iterations
+run_metropolis_MCMC = function(startvalue, iterations){
+  cat("Prior beta(2, 10)\n")
   chain = array(dim = c(iterations+1,2))
   chain[1,1] = startvalue
   # record likelihood not log-scale
@@ -86,7 +91,7 @@ run_metropolis_MCMC = function(startvalue, iterations, prior_shape){
   while (i <= iterations) {
     #cat("i = ", i, " : ")
     proposal = getProposal(chain[i,1], w=.2) 
-    isAccepted = accept(proposal, chain[i,1], prior_shape)
+    isAccepted = accept(proposal, chain[i,1])
     
     if (isAccepted) {
       #cat(" accept ", proposal, "\n")
@@ -105,15 +110,15 @@ run_metropolis_MCMC = function(startvalue, iterations, prior_shape){
   return(mcmc(chain))
 }
 
-createPlot = function(chain, chain_len, prior_shape, burnin=.1) {
+# plot prior, posterior, and likelihood together
+createPlot = function(chain, chain_len, shape1 = 2, shape2 = 5, burnin=.1) {
   # rm burnin
   posterior = chain[(chain_len*burnin):chain_len, 1]
   length(posterior)
   
   llhd = chain[(chain_len*burnin):chain_len, 2]
   # rescaled by max of posterior
-  ratio = max(posterior) / max(llhd)
-  llhd = llhd * ratio
+  llhd = llhd / max(llhd) * 0.9
     
   library("tidyverse")
   df1 = tibble(x = posterior, dist = rep("posterior", length(posterior))) 
@@ -122,10 +127,10 @@ createPlot = function(chain, chain_len, prior_shape, burnin=.1) {
   library("ggplot2")
   p <- ggplot(df1, aes(x=x)) + 
     geom_density(aes(colour = "posterior")) + 
-    stat_function(fun = function(x) dgamma(x*10, prior_shape), 
+    stat_function(fun = function(x) dbeta(x, shape1 = shape1, shape2 = shape2), 
                   aes(colour = "prior")) +
     geom_density(aes(x=x, colour = "likelihood"), data = df2) +
-    xlim(0, 2) + scale_colour_manual(values = c("orange", "green", "blue")) + 
+    xlim(0, 1) + scale_colour_manual(values = c("orange", "green", "blue")) + 
     xlab("") + ylab("") + theme_classic() 
   return(p)
 }
@@ -135,40 +140,43 @@ library(coda)
 startvalue = c(0.5) # P_heads_guess
 chain_len = 10000
 
-
+###### case 1: 10 flips ###### 
 coin_flips = c('H','T','H','T','H','H','T','H','H','H')
 length(coin_flips)
 
-chain = run_metropolis_MCMC(startvalue, chain_len, prior_shape=2)
+chain = run_metropolis_MCMC(startvalue, chain_len)
 summary(chain[(chain_len*.1):chain_len,])
 
-p <- createPlot(chain, chain_len, prior_shape = 2)
+p <- createPlot(chain, chain_len)
 p
 
-ggsave("g2d10.pdf", p, width = 5, height = 5)
+ggsave("b25d10l.pdf", p, width = 5, height = 5)
 
+
+###### case 2: 50 flips ###### 
 
 coin_flips = c('H','T','H','T','H','H','T','H','H','H','T','H','H','T','T','T','T','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','T','T','T','H','T','T','T','H','T','T','T','H','H','H','T','T','H')
 length(coin_flips)
-chain = run_metropolis_MCMC(startvalue, chain_len, prior_shape=2)
+chain = run_metropolis_MCMC(startvalue, chain_len)
 summary(chain[(chain_len*.1):chain_len,])
 
-p <- createPlot(chain, chain_len, prior_shape = 2)
+p <- createPlot(chain, chain_len)
 p
 
-ggsave("g2d50.pdf", p, width = 5, height = 5)
+ggsave("b25d50l.pdf", p, width = 5, height = 5)
 
 
+###### case 3: 100 flips ###### 
 
 coin_flips = c('H','T','H','T','H','H','T','H','H','H','T','H','H','T','T','T','T','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','T','T','T','H','T','T','T','H','T','T','T','H','H','H','T','T','H','H','H','T','H','H','H','T','T','H','H','H','H','H','H','H','T','T','H','H','H','H','T','T','H','H','H','T','T','H','H','H','H','H','H','T','T','T','H','H','H','H','H','H','T','H','T','H','H','T','T')
 length(coin_flips)
-chain = run_metropolis_MCMC(startvalue, chain_len, prior_shape=2)
+chain = run_metropolis_MCMC(startvalue, chain_len)
 summary(chain[(chain_len*.1):chain_len,])
 
-p <- createPlot(chain, chain_len, prior_shape = 2)
+p <- createPlot(chain, chain_len)
 p
 
-ggsave("g2d100.pdf", p, width = 5, height = 5)
+ggsave("b25d100l.pdf", p, width = 5, height = 5)
 
 
 
