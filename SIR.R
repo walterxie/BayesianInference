@@ -1,6 +1,8 @@
 # S I R
 # http://alexeidrummond.org/bayesian_phylo_lectures/lecture13/SIR_demo.js
 
+# setwd("~/WorkSpace/BayesianInference")
+
 Tinf <- function(S,I,R) {
   return(pub.beta * S * I)
 }
@@ -102,12 +104,20 @@ getR0 <- function(S,I,R,t) {
 createPlot <- function(result=list()) {
   library(tidyverse)
   print(names(sto))
-  df <- data.frame(sto) %>% as_tibble %>% gather("name", "y", -t)
+  df <- data.frame(sto) 
+  scale2ndy = 0.15
+  df[,"R0"] = df[,"R0"] / scale2ndy
+  df <- df %>% as_tibble %>% gather("name", "y", -t)
   
   
   library(ggplot2)
   p <- ggplot(df, aes(x=t, y=y, group=name, color=name)) +
-    geom_line() + xlab("Time") + ylab("Population size") + theme_classic() 
+    geom_line() + 
+    scale_y_continuous(
+      "Population size", 
+      sec.axis = sec_axis(~ . * scale2ndy, name = "Effective reproductive number")
+    ) +
+    xlab("Time") + theme_classic() 
   return(p)
 }
 
@@ -117,16 +127,36 @@ pub.N = 100
 pub.beta = 0.01
 pub.mu = 0.1
 
-sto <- getStochastic(50)
-sto
+sim <- list()
+for (s in 1:100) {
+  sim[[s]] <- getStochastic(50)
+}
 
-p <- createPlot(sto)
-p
-ggsave("SIRstochastic.pdf", p, width = 5, height = 5)
+pdf(file = "SIRir.pdf", width = 5, height = 5)
+plot(x=sim[[1]]$t,sim[[1]]$R, type="s", ylim = c(0,100), 
+     col = rgb(red = 0, green = 1, blue = 0, alpha = 0.3),
+     xlab="Time", ylab="Population size")
+for (s in 2:100) {
+  lines(x=sim[[s]]$t,sim[[s]]$R, type="s", ylim = c(0,100), 
+        col = rgb(red = 0, green = 1, blue = 0, alpha = 0.3))
+}
+for (s in 1:100) {
+  lines(x=sim[[s]]$t,sim[[s]]$I, type="s", ylim = c(0,100), 
+        col = rgb(red = 1, green = 0, blue = 0, alpha = 0.3))
+}
+legend(30, 60, legend=c("Infected", "Recovered"),
+       col=c("red", "green"), lty=1:1, cex=0.8)
+dev.off()
 
-det <- getDeterministic(50, nSteps=50)
-det
 
-p <- createPlot(det)
-p
-ggsave("SIRdeterministic.pdf", p, width = 5, height = 5)
+#sto <- getStochastic(50)
+#sto
+#p <- createPlot(sto)
+#p
+#ggsave("SIRstochastic.pdf", p, width = 8, height = 4)
+
+#det <- getDeterministic(50, nSteps=50)
+#det
+#p <- createPlot(det)
+#p
+#ggsave("SIRdeterministic.pdf", p, width = 8, height = 4)
