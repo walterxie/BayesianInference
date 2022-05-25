@@ -48,8 +48,8 @@ calc_prob_coin_flip_data <- function(P_heads_guess, coin_flips, log=T)
 
 
 # this must be log likelihood
-likelihood = function(param){
-  return(calc_prob_coin_flip_data(P_heads_guess=param, coin_flips=coin_flips))
+likelihood = function(P_heads){
+  return(calc_prob_coin_flip_data(P_heads_guess=P_heads, coin_flips=coin_flips))
 }
 
 # prior 
@@ -110,6 +110,10 @@ run_metropolis_MCMC = function(startvalue, iterations){
   return(mcmc(chain))
 }
 
+sapply_likelihood = function(x, yscale = 1000) {
+  return( sapply(x, FUN=calc_prob_coin_flip_data, coin_flips=coin_flips, log = F) * yscale)
+}
+
 # plot prior, posterior, and likelihood together
 createPlot = function(chain, chain_len, shape1 = 2, shape2 = 5, burnin=.1) {
   # rm burnin
@@ -122,14 +126,16 @@ createPlot = function(chain, chain_len, shape1 = 2, shape2 = 5, burnin=.1) {
     
   library("tidyverse")
   df1 = tibble(x = posterior, dist = rep("posterior", length(posterior))) 
-  df2 = tibble(x = llhd, dist = rep("likelihood", length(llhd)))
+  #df2 = tibble(x = llhd, dist = rep("likelihood", length(llhd)))
   
   library("ggplot2")
   p <- ggplot(df1, aes(x=x)) + 
     geom_density(aes(colour = "posterior")) + 
-    stat_function(fun = function(x) dbeta(x, shape1 = shape1, shape2 = shape2), 
+    geom_function(fun = dbeta, args = list(shape1 = shape1, shape2 = shape2), 
                   aes(colour = "prior")) +
-    geom_density(aes(x=x, colour = "likelihood"), data = df2) +
+    geom_function(fun = sapply_likelihood, 
+                  aes(colour = "likelihood")) +
+    #geom_density(aes(x=x, colour = "likelihood"), data = df2) +
     xlim(0, 1) + scale_colour_manual(values = c("orange", "green", "blue")) + 
     xlab("") + ylab("") + theme_classic() 
   return(p)
