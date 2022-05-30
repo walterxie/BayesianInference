@@ -53,8 +53,8 @@ likelihood = function(P_heads){
 }
 
 # prior 
-prior = function(param, shape1 = 2, shape2 = 5){
-  return(dbeta(param, shape1 = shape1, shape2 = shape2, log = T))
+prior = function(param, FUN = dbeta, shape1 = 2, shape2 = 5){
+  return(FUN(param, shape1 = shape1, shape2 = shape2, log = T))
 }
 
 # make a proposal in MCMC
@@ -64,13 +64,13 @@ getProposal = function(current, n=1, w = .01) {
 }
 
 # accept or not the currect state 
-accept = function(proposal, current) {
+accept = function(proposal, current, ...) {
   if (proposal < 0 | proposal > 1) 
     return(FALSE);
   ratio = exp( likelihood(proposal) + 
-                 prior(proposal) - 
+                 prior(proposal, ...) - 
                  likelihood(current) - 
-                 prior(current) )
+                 prior(current, ...) )
   if (ratio > runif(1)){
     return(TRUE)
   }else{
@@ -79,7 +79,7 @@ accept = function(proposal, current) {
 }
 
 # MCMC given a start value and how many iterations
-run_metropolis_MCMC = function(startvalue, iterations){
+run_metropolis_MCMC = function(startvalue, iterations, ...){
   cat("Prior beta(2, 10)\n")
   chain = array(dim = c(iterations+1,2))
   chain[1,1] = startvalue
@@ -91,7 +91,7 @@ run_metropolis_MCMC = function(startvalue, iterations){
   while (i <= iterations) {
     #cat("i = ", i, " : ")
     proposal = getProposal(chain[i,1], w=.2) 
-    isAccepted = accept(proposal, chain[i,1])
+    isAccepted = accept(proposal, chain[i,1], ...)
     
     if (isAccepted) {
       #cat(" accept ", proposal, "\n")
@@ -110,12 +110,14 @@ run_metropolis_MCMC = function(startvalue, iterations){
   return(mcmc(chain))
 }
 
+# for plotting
 sapply_likelihood = function(x, yscale = 1000) {
   return( sapply(x, FUN=calc_prob_coin_flip_data, coin_flips=coin_flips, log = F) * yscale)
 }
 
 # plot prior, posterior, and likelihood together
-createPlot = function(chain, chain_len, shape1 = 2, shape2 = 5, burnin=.1) {
+createPlot = function(chain, chain_len, shape1 = 2, shape2 = 5, burnin=.1,
+                      title="", yscale = 1000) {
   # rm burnin
   posterior = chain[(chain_len*burnin):chain_len, 1]
   length(posterior)
@@ -133,11 +135,11 @@ createPlot = function(chain, chain_len, shape1 = 2, shape2 = 5, burnin=.1) {
     geom_density(aes(colour = "posterior")) + 
     geom_function(fun = dbeta, args = list(shape1 = shape1, shape2 = shape2), 
                   aes(colour = "prior")) +
-    geom_function(fun = sapply_likelihood, 
+    geom_function(fun = sapply_likelihood, args = list(yscale = yscale),
                   aes(colour = "likelihood")) +
     #geom_density(aes(x=x, colour = "likelihood"), data = df2) +
     xlim(0, 1) + scale_colour_manual(values = c("orange", "green", "blue")) + 
-    xlab("") + ylab("") + theme_classic() 
+    xlab("") + ylab("") + ggtitle(title) + theme_classic() 
   return(p)
 }
 
@@ -150,10 +152,15 @@ chain_len = 10000
 coin_flips = c('H','T','H','T','H','H','T','H','H','H')
 length(coin_flips)
 
-chain = run_metropolis_MCMC(startvalue, chain_len)
+shape1 = 2
+shape2 = 5
+
+chain = run_metropolis_MCMC(startvalue, chain_len, shape1 = shape1, shape2 = shape2)
 summary(chain[(chain_len*.1):chain_len,])
 
-p <- createPlot(chain, chain_len)
+p <- createPlot(chain, chain_len, shape1 = shape1, shape2 = shape2, 
+                title = paste0(length(coin_flips), " flips using prior beta(",
+                               shape1,",",shape2,")"))
 p
 
 ggsave("b25d10l.pdf", p, width = 5, height = 5)
@@ -163,10 +170,13 @@ ggsave("b25d10l.pdf", p, width = 5, height = 5)
 
 coin_flips = c('H','T','H','T','H','H','T','H','H','H','T','H','H','T','T','T','T','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','T','T','T','H','T','T','T','H','T','T','T','H','H','H','T','T','H')
 length(coin_flips)
-chain = run_metropolis_MCMC(startvalue, chain_len)
+
+chain = run_metropolis_MCMC(startvalue, chain_len, shape1 = shape1, shape2 = shape2)
 summary(chain[(chain_len*.1):chain_len,])
 
-p <- createPlot(chain, chain_len)
+p <- createPlot(chain, chain_len, shape1 = shape1, shape2 = shape2, 
+                title = paste0(length(coin_flips), " flips using prior beta(",
+                               shape1,",",shape2,")"), yscale = 10E14)
 p
 
 ggsave("b25d50l.pdf", p, width = 5, height = 5)
@@ -176,10 +186,13 @@ ggsave("b25d50l.pdf", p, width = 5, height = 5)
 
 coin_flips = c('H','T','H','T','H','H','T','H','H','H','T','H','H','T','T','T','T','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','T','T','T','H','T','T','T','H','T','T','T','H','H','H','T','T','H','H','H','T','H','H','H','T','T','H','H','H','H','H','H','H','T','T','H','H','H','H','T','T','H','H','H','T','T','H','H','H','H','H','H','T','T','T','H','H','H','H','H','H','T','H','T','H','H','T','T')
 length(coin_flips)
-chain = run_metropolis_MCMC(startvalue, chain_len)
+
+chain = run_metropolis_MCMC(startvalue, chain_len, shape1 = shape1, shape2 = shape2)
 summary(chain[(chain_len*.1):chain_len,])
 
-p <- createPlot(chain, chain_len)
+p <- createPlot(chain, chain_len, shape1 = shape1, shape2 = shape2, 
+                title = paste0(length(coin_flips), " flips using prior beta(",
+                               shape1,",",shape2,")"), yscale = 10E28)
 p
 
 ggsave("b25d100l.pdf", p, width = 5, height = 5)
