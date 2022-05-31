@@ -198,4 +198,39 @@ p
 ggsave("b25d100l.pdf", p, width = 5, height = 5)
 
 
+######  analytical solution for weighted coin flip  ###### 
+#  https://academic.oup.com/bioinformatics/article/15/1/38/218372
+# B(θ1;hn+α,tn+β)
+
+plotAnalyticalSolution <- function(data=c()) {
+  counts <- table(coin_flips)
+  hn = counts["H"]
+  tn = counts["T"]
+  return( ggplot() + 
+           geom_function(fun = dbeta, args = list(shape1 = shape1+hn, shape2 = shape2+tn),
+                         aes(colour = "posterior")) + 
+           geom_function(fun = dbeta, args = list(shape1 = shape1, shape2 = shape2), 
+                         aes(colour = "prior")) +
+           xlim(0, 1) + scale_colour_manual(values = c("green", "blue")) + 
+           xlab("") + ylab("") + 
+           ggtitle(paste0("B(",shape1,",",shape2,"), hn = ", hn, ", tn = ", tn)) + 
+           theme_classic() )
+}
+
+coin_flips = c('H','T','H','T','H','H','T','H','H','H')
+
+plotAnalyticalSolution(coin_flips)
+
+coin_flips = c('H','T','H','T','H','H','T','H','H','H','T','H','H','T','T','T','T','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','T','T','T','H','T','T','T','H','T','T','T','H','H','H','T','T','H')
+
+plotAnalyticalSolution(coin_flips)
+
+coin_flips = c('H','T','H','T','H','H','T','H','H','H','T','H','H','T','T','T','T','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','H','T','T','T','H','T','T','T','H','T','T','T','H','H','H','T','T','H','H','H','T','H','H','H','T','T','H','H','H','H','H','H','H','T','T','H','H','H','H','T','T','H','H','H','T','T','H','H','H','H','H','H','T','T','T','H','H','H','H','H','H','T','H','T','H','H','T','T')
+
+plotAnalyticalSolution(coin_flips)
+
+
+
+
+
 
